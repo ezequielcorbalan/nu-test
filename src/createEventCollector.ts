@@ -1,18 +1,12 @@
 import { CollectEvent } from './application/CollectEvent';
-import type { CollectionOutcome } from './application/CollectionOutcome';
 import type { Clock } from './application/ports/Clock';
+import type { EventCollector } from './application/ports/EventCollector';
 import type { EventConsumer } from './application/ports/EventConsumer';
 import { Duration } from './domain/Duration';
-import type { Event } from './domain/Event';
 import { InMemorySlidingWindow } from './infrastructure/InMemorySlidingWindow';
 import { SystemClock } from './infrastructure/SystemClock';
 
 const DEFAULT_WINDOW = Duration.minutes(10);
-
-/** The collector as producers see it: hand it an event, learn what happened. */
-export interface EventCollector {
-  collect(event: Event): Promise<CollectionOutcome>;
-}
 
 export interface EventCollectorOptions {
   /** Where surviving events are forwarded. */

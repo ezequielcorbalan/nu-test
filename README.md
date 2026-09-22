@@ -68,8 +68,12 @@ The server is built on `node:http`, so it adds no runtime dependencies.
 Clean Architecture, three layers, dependencies pointing inwards:
 
 ```
-domain  ←  application  ←  infrastructure
+domain  ←  application  ←  infrastructure  ←  createEventCollector / server
 ```
+
+The two files at the root of `src/` are the outermost ring: the only code that
+names concrete classes and wires them together. Nothing imports them except
+tests.
 
 ```
 src/
@@ -81,6 +85,7 @@ src/
 ├── application/
 │   ├── ports/                   interfaces the use case needs
 │   │   ├── Clock.ts
+│   │   ├── EventCollector.ts    inbound: what producers call
 │   │   ├── EventConsumer.ts
 │   │   └── DeduplicationWindow.ts
 │   ├── CollectionOutcome.ts     'forwarded' | 'dropped'

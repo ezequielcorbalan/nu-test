@@ -1,7 +1,7 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 
 import { CollectionOutcome } from '../../application/CollectionOutcome';
-import type { EventCollector } from '../../createEventCollector';
+import type { EventCollector } from '../../application/ports/EventCollector';
 import { InvalidEventBodyError, parseEvent } from './parseEvent';
 
 const EVENTS_PATH = '/events';
