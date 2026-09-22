@@ -5,5 +5,5 @@ module.exports = {
   roots: ['<rootDir>/src'],
   testMatch: ['**/*.test.ts'],
   clearMocks: true,
-  collectCoverageFrom: ['src/**/*.ts', '!src/**/*.test.ts', '!src/testing/**', '!src/demo.ts', '!src/server.ts'],
+  collectCoverageFrom: ['src/**/*.ts', '!src/**/*.test.ts', '!src/testing/**', '!src/server.ts'],
 };

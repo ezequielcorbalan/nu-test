@@ -2,14 +2,11 @@
   "name": "event-collector",
   "version": "1.0.0",
   "description": "Event collector that forwards events to a downstream consumer, deduplicating by id within a sliding time window",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
-    "demo": "ts-node src/demo.ts",
     "start": "node dist/server.js",
     "dev": "ts-node src/server.ts"
   },

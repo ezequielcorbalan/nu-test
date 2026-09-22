@@ -16,33 +16,12 @@ Producer 3 ─┘   (seen, 10 min)
 ```bash
 npm install
 npm test        # 57 tests
-npm run demo    # three producers against one collector
-npm run build   # type declarations + JS into dist/
+npm run build   # compile to dist/
 npm start       # HTTP server on PORT (default 3000), after a build
 npm run dev     # same, straight from the TypeScript sources
 ```
 
 Requires Node 18+.
-
-## Using it
-
-```ts
-import { createEventCollector, EventId, CollectionOutcome } from './src';
-
-const collector = createEventCollector({
-  consumer: { async consume(event) { await publish(event); } },
-});
-
-const outcome = await collector.collect({
-  id: EventId.of('e7af'),
-  payload: { amount: 100 },
-});
-
-outcome === CollectionOutcome.Forwarded; // or CollectionOutcome.Dropped
-```
-
-`window` (default ten minutes) and `clock` (default the system clock) are
-optional overrides.
 
 ## HTTP API
 
@@ -50,7 +29,9 @@ Remote producers send events over HTTP. `npm start` runs the server with a
 consumer that logs every forwarded event to stdout.
 
 ```bash
-curl -i -H 'Content-Type: application/json'      -d '{"id":"e7af","payload":{"amount":100}}'      http://localhost:3000/events
+curl -i -H 'Content-Type: application/json' \
+     -d '{"id":"e7af","payload":{"amount":100}}' \
+     http://localhost:3000/events
 ```
 
 `POST /events` with body `{ "id": string, "payload": any JSON }`:
@@ -73,7 +54,8 @@ through gets a success back. `payload: null` is accepted; only a missing
 To use a different consumer, build the server yourself:
 
 ```ts
-import { createEventCollector, createHttpServer } from './src';
+import { createEventCollector } from './src/createEventCollector';
+import { createHttpServer } from './src/infrastructure/http/createHttpServer';
 
 const collector = createEventCollector({ consumer: myConsumer });
 createHttpServer({ collector }).listen(8080);
@@ -106,13 +88,12 @@ src/
 ├── infrastructure/              implementations of the ports, and adapters
 │   ├── SystemClock.ts
 │   ├── InMemorySlidingWindow.ts
-│   ├── LoggingConsumer.ts       stdout consumer for the demo and the server
+│   ├── LoggingConsumer.ts       stdout consumer for the server
 │   └── http/
 │       ├── parseEvent.ts        request body → Event, or a 400
 │       └── createHttpServer.ts  POST /events on node:http
 ├── createEventCollector.ts      composition root
-├── server.ts                    HTTP entry point
-└── index.ts                     public API
+└── server.ts                    HTTP entry point
 ```
 
 Ports are **declared** in `application` and **implemented** in
