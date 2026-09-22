@@ -13,5 +13,9 @@ export { EventId, InvalidEventIdError } from './domain/EventId';
 export type { Event } from './domain/Event';
 export type { Timestamp } from './domain/Timestamp';
 
+export { createHttpServer } from './infrastructure/http/createHttpServer';
+export type { HttpServerLogger, HttpServerOptions } from './infrastructure/http/createHttpServer';
+export { InvalidEventBodyError, parseEvent } from './infrastructure/http/parseEvent';
+export { LoggingConsumer } from './infrastructure/LoggingConsumer';
 export { InMemorySlidingWindow } from './infrastructure/InMemorySlidingWindow';
 export { SystemClock } from './infrastructure/SystemClock';

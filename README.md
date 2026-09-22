@@ -15,9 +15,11 @@ Producer 3 ─┘   (seen, 10 min)
 
 ```bash
 npm install
-npm test        # 32 tests
+npm test        # 57 tests
 npm run demo    # three producers against one collector
 npm run build   # type declarations + JS into dist/
+npm start       # HTTP server on PORT (default 3000), after a build
+npm run dev     # same, straight from the TypeScript sources
 ```
 
 Requires Node 18+.
@@ -42,6 +44,43 @@ outcome === CollectionOutcome.Forwarded; // or CollectionOutcome.Dropped
 `window` (default ten minutes) and `clock` (default the system clock) are
 optional overrides.
 
+## HTTP API
+
+Remote producers send events over HTTP. `npm start` runs the server with a
+consumer that logs every forwarded event to stdout.
+
+```bash
+curl -i -H 'Content-Type: application/json'      -d '{"id":"e7af","payload":{"amount":100}}'      http://localhost:3000/events
+```
+
+`POST /events` with body `{ "id": string, "payload": any JSON }`:
+
+| Case | Status | Body |
+|---|---|---|
+| New event | `201` | `{ "outcome": "forwarded" }` |
+| Duplicate within the window | `200` | `{ "outcome": "dropped" }` |
+| Malformed JSON, not an object, missing/blank `id`, missing `payload` | `400` | `{ "error": "<reason>" }` |
+| `Content-Type` other than `application/json` | `415` | `{ "error": "..." }` |
+| Body over 1 MB | `413` | `{ "error": "..." }` |
+| Any other method on `/events` | `405`, `Allow: POST` | `{ "error": "..." }` |
+| Any other path | `404` | `{ "error": "..." }` |
+| Consumer throws | `500` | `{ "error": "Internal server error" }`, details logged |
+
+A duplicate is not an error: a producer retrying a request that already went
+through gets a success back. `payload: null` is accepted; only a missing
+`payload` key is rejected.
+
+To use a different consumer, build the server yourself:
+
+```ts
+import { createEventCollector, createHttpServer } from './src';
+
+const collector = createEventCollector({ consumer: myConsumer });
+createHttpServer({ collector }).listen(8080);
+```
+
+The server is built on `node:http`, so it adds no runtime dependencies.
+
 ## Design
 
 Clean Architecture, three layers, dependencies pointing inwards:
@@ -64,10 +103,15 @@ src/
 │   │   └── DeduplicationWindow.ts
 │   ├── CollectionOutcome.ts     'forwarded' | 'dropped'
 │   └── CollectEvent.ts          the use case
-├── infrastructure/              implementations of the ports
+├── infrastructure/              implementations of the ports, and adapters
 │   ├── SystemClock.ts
-│   └── InMemorySlidingWindow.ts
+│   ├── InMemorySlidingWindow.ts
+│   ├── LoggingConsumer.ts       stdout consumer for the demo and the server
+│   └── http/
+│       ├── parseEvent.ts        request body → Event, or a 400
+│       └── createHttpServer.ts  POST /events on node:http
 ├── createEventCollector.ts      composition root
+├── server.ts                    HTTP entry point
 └── index.ts                     public API
 ```
 
@@ -149,13 +193,20 @@ concurrent `collect()` calls with the same id yielding exactly one forward, and
 the window's internal size returning to zero once entries expire — the
 regression test for the memory leak.
 
+The HTTP tests start a real server on port 0 and call it with Node's built-in
+`fetch`. They cover every row of the status table above (including oversized
+bodies sent both with a `Content-Length` and chunked), two concurrent POSTs
+with the same id reaching the consumer exactly once, and an id being accepted
+again after the window.
+
 ## Limitations
 
 Deliberately out of scope, and what each would take:
 
 - **Consumer failures lose the event.** The id is already claimed, and there is
   no retry. Production would need the id recorded after success plus an
-  in-flight set, or an outbox with retries.
+  in-flight set, or an outbox with retries. Over HTTP this means a producer
+  that retries after a `500` gets `200 dropped`, and the event is gone.
 - **State is per-process.** Two collector instances deduplicate independently.
   A shared store behind the same `DeduplicationWindow` port, or consistent
   routing by hash of `id`, would fix it.

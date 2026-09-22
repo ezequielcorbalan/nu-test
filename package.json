@@ -9,7 +9,9 @@
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
-    "demo": "ts-node src/demo.ts"
+    "demo": "ts-node src/demo.ts",
+    "start": "node dist/server.js",
+    "dev": "ts-node src/server.ts"
   },
   "keywords": [
     "deduplication",

@@ -5,17 +5,11 @@
  * Run with `npm run demo`.
  */
 import { CollectionOutcome } from './application/CollectionOutcome';
-import type { EventConsumer } from './application/ports/EventConsumer';
 import { createEventCollector } from './createEventCollector';
 import { Duration } from './domain/Duration';
 import type { Event } from './domain/Event';
 import { EventId } from './domain/EventId';
-
-class LoggingConsumer implements EventConsumer {
-  async consume(event: Event): Promise<void> {
-    console.log(`    consumer received ${event.id} (${JSON.stringify(event.payload)})`);
-  }
-}
+import { LoggingConsumer } from './infrastructure/LoggingConsumer';
 
 /** Producers 1 and 3 both report 42b0, and producer 2 reports e7af twice. */
 const TRAFFIC: ReadonlyArray<{ producer: number; id: string }> = [
